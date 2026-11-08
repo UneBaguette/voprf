@@ -8,6 +8,9 @@
 
 //! Includes a series of tests for the group implementations
 
+use rand::rngs::SysRng;
+use zeroize::Zeroize;
+
 use crate::{Error, Group, Result};
 
 // Test that the deserialization of a group element should throw an error if the
@@ -89,4 +92,30 @@ fn test_random_scalar_rng_failure() {
     rejects_failure::<p521::NistP521>();
     #[cfg(feature = "ristretto255")]
     rejects_failure::<crate::Ristretto255>();
+}
+
+/// Serialized secrets can be wiped for any supported group.
+#[test]
+fn test_zeroize_serialized() {
+    fn wipes<G: Group>() {
+        let scalar = G::random_scalar(&mut SysRng).unwrap();
+
+        let mut serialized_scalar = G::serialize_scalar(scalar);
+        assert!(serialized_scalar.iter().any(|&x| x != 0));
+
+        serialized_scalar.zeroize();
+        assert!(serialized_scalar.iter().all(|&x| x == 0));
+
+        let mut serialized_elem = G::serialize_elem(G::base_elem());
+        assert!(serialized_elem.iter().any(|&x| x != 0));
+
+        serialized_elem.zeroize();
+        assert!(serialized_elem.iter().all(|&x| x == 0));
+    }
+
+    wipes::<p256::NistP256>();
+    wipes::<p384::NistP384>();
+    wipes::<p521::NistP521>();
+    #[cfg(feature = "ristretto255")]
+    wipes::<crate::Ristretto255>();
 }

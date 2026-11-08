@@ -17,6 +17,7 @@ use digest::{Digest, Output, OutputSizeUser};
 use hybrid_array::typenum::Unsigned;
 use hybrid_array::{Array, ArraySize};
 use rand_core::TryCryptoRng;
+use zeroize::Zeroizing;
 
 use crate::common::{
     derive_keypair, deterministic_blind_unchecked, generate_proof, hash_to_group, i2osp_2,
@@ -403,9 +404,9 @@ impl<CS: CipherSuite> PoprfServer<CS> {
 
         let evaluated_element = input_element * &CS::Group::invert_scalar(tweak);
 
-        let issued_element = CS::Group::serialize_elem(evaluated_element);
+        let issued_element = Zeroizing::new(CS::Group::serialize_elem(evaluated_element));
 
-        server_evaluate_hash_input::<CS>(input, info, issued_element)
+        server_evaluate_hash_input::<CS>(input, info, issued_element.as_slice())
     }
 
     /// Retrieves the server's public key
@@ -703,6 +704,7 @@ where
     Ok(unblinded_elements.zip(inputs).zip(iter::repeat(info)).map(
         |((unblinded_element, input), info)| {
             let elem_len = <CS::Group as Group>::ElemLen::U16.to_be_bytes();
+            let serialized_elem = Zeroizing::new(CS::Group::serialize_elem(unblinded_element));
 
             // hashInput = I2OSP(len(input), 2) || input ||
             //             I2OSP(len(info), 2) || info ||
@@ -715,7 +717,7 @@ where
                 .chain_update(i2osp_2(info.as_ref().len()).map_err(|_| Error::Info)?)
                 .chain_update(info.as_ref())
                 .chain_update(elem_len)
-                .chain_update(CS::Group::serialize_elem(unblinded_element))
+                .chain_update(serialized_elem.as_slice())
                 .chain_update(STR_FINALIZE)
                 .finalize();
 

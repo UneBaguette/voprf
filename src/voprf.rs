@@ -17,6 +17,7 @@ use digest::{Digest, Output};
 use hybrid_array::typenum::Unsigned;
 use hybrid_array::Array;
 use rand_core::TryCryptoRng;
+use zeroize::Zeroizing;
 
 use crate::common::{
     derive_keypair, deterministic_blind_unchecked, generate_proof, hash_to_group, i2osp_2,
@@ -367,9 +368,9 @@ impl<CS: CipherSuite> VoprfServer<CS> {
         };
         let evaluated_element = input_element * &self.sk;
 
-        let issued_element = CS::Group::serialize_elem(evaluated_element);
+        let issued_element = Zeroizing::new(CS::Group::serialize_elem(evaluated_element));
 
-        server_evaluate_hash_input::<CS>(input, None, issued_element)
+        server_evaluate_hash_input::<CS>(input, None, issued_element.as_slice())
     }
 
     /// Retrieves the server's public key
@@ -524,6 +525,7 @@ fn finalize_after_unblind<
 ) -> FinalizeAfterUnblindResult<'a, CS, I, IE> {
     inputs_and_unblinded_elements.map(|(input, unblinded_element)| {
         let elem_len = <CS::Group as Group>::ElemLen::U16.to_be_bytes();
+        let serialized_elem = Zeroizing::new(CS::Group::serialize_elem(unblinded_element));
 
         // hashInput = I2OSP(len(input), 2) || input ||
         //             I2OSP(len(unblindedElement), 2) || unblindedElement ||
@@ -533,7 +535,7 @@ fn finalize_after_unblind<
             .chain_update(i2osp_2(input.as_ref().len()).map_err(|_| Error::Input)?)
             .chain_update(input.as_ref())
             .chain_update(elem_len)
-            .chain_update(CS::Group::serialize_elem(unblinded_element))
+            .chain_update(serialized_elem.as_slice())
             .chain_update(STR_FINALIZE)
             .finalize())
     })

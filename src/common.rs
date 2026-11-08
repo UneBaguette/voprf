@@ -418,7 +418,7 @@ pub(crate) fn hash_to_group<CS: CipherSuite>(
 pub(crate) fn server_evaluate_hash_input<CS: CipherSuite>(
     input: &[u8],
     info: Option<&[u8]>,
-    issued_element: Array<u8, <<CS as CipherSuite>::Group as Group>::ElemLen>,
+    issued_element: &[u8],
 ) -> Result<Output<CS::Hash>> {
     // OPRF & VOPRF
     // hashInput = I2OSP(len(input), 2) || input ||
@@ -441,7 +441,7 @@ pub(crate) fn server_evaluate_hash_input<CS: CipherSuite>(
             .chain_update(info.as_ref());
     }
     Ok(hash
-        .chain_update(i2osp_2(issued_element.as_slice().len()).map_err(|_| Error::Input)?)
+        .chain_update(i2osp_2(issued_element.len()).map_err(|_| Error::Input)?)
         .chain_update(issued_element)
         .chain_update(STR_FINALIZE)
         .finalize())
