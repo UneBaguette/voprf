@@ -21,6 +21,7 @@ use hash2curve::{ExpandMsgXmd, GroupDigest, MapToCurve};
 use hybrid_array::typenum::{IsGreaterOrEqual, IsLessOrEqual, Prod, Sum, True, U2};
 use hybrid_array::{Array, ArraySize};
 use rand_core::TryCryptoRng;
+use zeroize::Zeroizing;
 
 use super::Group;
 use crate::{Error, InternalError, Result};
@@ -120,9 +121,9 @@ where
     }
 
     fn serialize_scalar(scalar: Self::Scalar) -> Array<u8, Self::ScalarLen> {
-        let bytes: FieldBytes<Self> = scalar.into();
+        let bytes: Zeroizing<FieldBytes<Self>> = Zeroizing::new(scalar.into());
         let mut result = Array::<u8, Self::ScalarLen>::default();
-        result.as_mut_slice().copy_from_slice(bytes.as_ref());
+        result.as_mut_slice().copy_from_slice(bytes.as_slice());
         result
     }
 

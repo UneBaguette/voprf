@@ -27,16 +27,18 @@ curve25519-dalek = { version = "5", default-features = false, features = [
   "zeroize",
 ], optional = true }
 derive-where = { version = "1", features = ["zeroize-on-drop"] }
-digest = "0.11"
+digest = { version = "0.11", features = ["zeroize"] }
 displaydoc = { version = "0.2", default-features = false }
 elliptic-curve = { version = "0.14.3", features = ["sec1"] }
 hash2curve = "0.14"
-hybrid-array = "0.4"
+hybrid-array = { version = "0.4", features = ["zeroize"] }
 rand_core = { version = "0.10", default-features = false }
 serde = { version = "1", default-features = false, features = [
   "derive",
 ], optional = true }
-sha2 = { version = "0.11", default-features = false, optional = true }
+sha2 = { version = "0.11", default-features = false, features = [
+  "zeroize",
+], optional = true }
 subtle = { version = "2.6", default-features = false }
 zeroize = { version = "1.5", default-features = false }
 
