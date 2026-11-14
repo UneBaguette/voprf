@@ -456,9 +456,9 @@ mod test {
     macro_rules! structured_tests {
         ($cs:ty, $mod:ident) => {
             mod $mod {
-                use super::*;
-
                 use rand::rngs::SysRng;
+
+                use super::*;
 
                 #[test]
                 fn roundtrip_oprf_client() {
