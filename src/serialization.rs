@@ -269,6 +269,7 @@ pub(crate) mod serde {
     use serde::de::{Deserializer, Error};
     use serde::ser::Serializer;
     use serde::{Deserialize, Serialize};
+    use zeroize::Zeroizing;
 
     use crate::Group;
 
@@ -298,15 +299,18 @@ pub(crate) mod serde {
         where
             D: Deserializer<'de>,
         {
-            Array::<_, G::ScalarLen>::deserialize(deserializer)
-                .and_then(|bytes| G::deserialize_scalar(&bytes).map_err(D::Error::custom))
+            Array::<_, G::ScalarLen>::deserialize(deserializer).and_then(|bytes| {
+                let bytes = Zeroizing::new(bytes);
+                G::deserialize_scalar(&bytes[..]).map_err(D::Error::custom)
+            })
         }
 
         pub(crate) fn serialize<S>(self_: &G::Scalar, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
-            G::serialize_scalar(*self_).serialize(serializer)
+            let bytes = Zeroizing::new(G::serialize_scalar(*self_));
+            (*bytes).serialize(serializer)
         }
     }
 }
