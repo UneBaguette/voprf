@@ -94,7 +94,8 @@ fn test_random_scalar_rng_failure() {
     rejects_failure::<crate::Ristretto255>();
 }
 
-/// Serialized secrets can be wiped for any supported group.
+/// Serialized scalars and elements support `Zeroize` for every supported group,
+/// so callers (and the library) can wipe serialized secrets.
 #[test]
 fn test_zeroize_serialized() {
     fn wipes<G: Group>() {

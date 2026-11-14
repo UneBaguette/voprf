@@ -19,6 +19,7 @@ use hybrid_array::typenum::{IsGreaterOrEqual, IsLessOrEqual, Prod, True, U16, U2
 use hybrid_array::Array;
 use rand_core::TryCryptoRng;
 use subtle::ConstantTimeEq;
+use zeroize::Zeroizing;
 
 use super::Group;
 use crate::{Error, InternalError, Result};
@@ -114,11 +115,11 @@ impl Group for Ristretto255 {
 
     fn random_scalar<R: TryCryptoRng>(rng: &mut R) -> Result<Self::Scalar> {
         loop {
-            let mut scalar_bytes = [0u8; 32];
-            rng.try_fill_bytes(&mut scalar_bytes)
+            let mut scalar_bytes = Zeroizing::new([0u8; 32]);
+            rng.try_fill_bytes(&mut *scalar_bytes)
                 .map_err(|_| Error::Rng)?;
 
-            if let Ok(scalar) = Self::deserialize_scalar(&scalar_bytes) {
+            if let Ok(scalar) = Self::deserialize_scalar(&*scalar_bytes) {
                 break Ok(scalar);
             }
         }
